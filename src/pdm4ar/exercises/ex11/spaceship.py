@@ -26,7 +26,7 @@ class SpaceshipDyn:
 
         self.x = spy.Matrix(spy.symbols("x y psi vx vy dpsi delta m", real=True))  # states
         self.u = spy.Matrix(spy.symbols("thrust ddelta", real=True))  # inputs
-        self.p = spy.Matrix([spy.symbols('t_f', positive=True)])  # final time
+        self.p = spy.Matrix([spy.symbols("t_f", positive=True)])  # final time
 
         self.n_x = self.x.shape[0]  # number of states
         self.n_u = self.u.shape[0]  # number of inputs
@@ -38,8 +38,30 @@ class SpaceshipDyn:
         Get dynamics for SCvx.
         0x 1y 2psi 3vx 4vy 5dpsi 6delta 7m
         """
+
+        # state variables
+        x, y, psi, vx, vy, dpsi, delta, m = [spy.sympify(var) for var in self.x]
+        F_thrust, ddelta = [spy.sympify(var) for var in self.u]
+        t_f = spy.sympify(self.p[0])
+
+        # convert numerical parameters
+        C_T = spy.sympify(self.sp.C_T)  # hrust coefficient for fuel consumption
+        l_T = spy.sympify(self.sg.l_t_half)  # istance from CoG to thruster
+        I = spy.sympify(self.sg.Iz)  # moment of inertia
+
         # Dynamics
-        f = spy.zeros(self.n_x, 1)
+        f = spy.Matrix(
+            [
+                vx * spy.cos(psi) - vy * spy.sin(psi),  # dx/dt
+                vx * spy.sin(psi) + vy * spy.cos(psi),  # dy/dt
+                dpsi,  # dpsi/dt
+                (1 / m) * spy.cos(delta) * F_thrust + dpsi * vy,  # dvx/dt
+                (1 / m) * spy.sin(delta) * F_thrust - dpsi * vx,  # dvy/dt
+                -l_T / I * spy.sin(delta) * F_thrust,  # ddpsi/dt
+                ddelta,  # d(delta)/dt
+                -C_T * F_thrust,  # dm/dt (fuel consumption)
+            ]
+        )
 
         A = f.jacobian(self.x)
         B = f.jacobian(self.u)
