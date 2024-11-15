@@ -69,7 +69,6 @@ class SpaceshipDyn:
 
         f_func = spy.lambdify((self.x, self.u, self.p), f, "numpy")
         A_func = spy.lambdify((self.x, self.u, self.p), A, "numpy")
-        B_func = spy.lambdify((self.x, self.u, self.p), B, "numpy")
         F_func = spy.lambdify((self.x, self.u, self.p), F, "numpy")
 
         return f_func, A_func, B_func, F_func
